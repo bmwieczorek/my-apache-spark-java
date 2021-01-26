@@ -67,7 +67,7 @@ public class CustomSparkMetricsListener extends SparkListener {
 */
                     String errorMessage = exception.isEmpty() ?
                             "UNKNOWN" :
-                            ( exception.get().getCause() == null ? exception.get().getMessage() : exception.get().getCause().getMessage());
+                            exception.get().getCause() == null ? exception.get().getMessage() : exception.get().getCause().getMessage();
                     customMetricCounterConsumer.onMetric("TaskStatus_ExceptionFailure." + appendTags(taskEnd), 1);
                     customMetricCounterConsumer.onMetric("TaskStatus_ExceptionFailureMsg." + substr(errorMessage), 1);
 
