@@ -61,10 +61,12 @@ public interface SparkIngestionBase extends SparkBase {
             write(dataset);
             getOnSuccessListeners().forEach(l -> l.accept(sparkSession));
 
-            LOGGER.info("Spark processing {} records succeeded after {} ms", recordsCountAcc.value(), System.currentTimeMillis() - startTimeMillis);
+            LOGGER.info("Spark processing {} records succeeded after {} ms",
+                    recordsCountAcc.value(), System.currentTimeMillis() - startTimeMillis);
         } catch (Exception e) {
             getOnErrorListeners().forEach(l -> l.accept(sparkSession));
-            LOGGER.error("Spark processing " + recordsCountAcc.value() + " records failed after " + (System.currentTimeMillis() - startTimeMillis) + " ms due to ", e);
+            LOGGER.error("Spark processing " + recordsCountAcc.value() + " records failed after "
+                    + (System.currentTimeMillis() - startTimeMillis) + " ms due to ", e);
             throw e;
         }
     }

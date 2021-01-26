@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 public interface SparkBase {
     Logger LOGGER = LoggerFactory.getLogger(SparkBase.class);
 
-    default void setupMetrics(SparkSession sparkSession) {}
+    default void setupMetrics(SparkSession sparkSession) { }
     void runSpark(SparkSession sparkSession);
 
     default void start() {

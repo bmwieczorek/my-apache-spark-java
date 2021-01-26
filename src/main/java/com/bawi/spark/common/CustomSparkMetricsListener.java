@@ -21,13 +21,14 @@ import java.util.Optional;
 public class CustomSparkMetricsListener extends SparkListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomSparkMetricsListener.class);
+    public static final int KEY_MAX_LENGTH = 30;
 
     private long appStartTimeMillis = Instant.now().toEpochMilli();
-    
-    private CustomMetricCounterConsumer customMetricCounterConsumer;
 
-    public CustomSparkMetricsListener(CustomMetricCounterConsumer customMetricCounterConsumer) {
-        this.customMetricCounterConsumer = customMetricCounterConsumer;
+    private final CustomMetricCounterConsumer metricsConsumer;
+
+    public CustomSparkMetricsListener(CustomMetricCounterConsumer metricsConsumer) {
+        this.metricsConsumer = metricsConsumer;
     }
 
     @Override
@@ -35,7 +36,7 @@ public class CustomSparkMetricsListener extends SparkListener {
         Long appEndTimeMillis = Optional.ofNullable(applicationEnd).map(SparkListenerApplicationEnd::time).orElse(0L);
         long durationMillis = appEndTimeMillis - appStartTimeMillis;
         UserMetricsSystem.gauge("applicationElapsedTimeInSecs." + resolveHostName()).set(durationMillis);
-        LOGGER.info("{} applicationElapsedTimeInSecs: {} ",resolveHostName(), durationMillis);
+        LOGGER.info("{} applicationElapsedTimeInSecs: {}", resolveHostName(), durationMillis);
     }
 
     @Override
@@ -43,7 +44,7 @@ public class CustomSparkMetricsListener extends SparkListener {
         if (taskEnd != null && taskEnd.reason() != null) {
             TaskEndReason reason = taskEnd.reason();
             if (reason instanceof Success$) {
-                customMetricCounterConsumer.onMetric("TaskStatus_Success." + appendTags(taskEnd), 1);
+                metricsConsumer.onMetric("TaskStatus_Success." + appendTags(taskEnd), 1);
             }
             if (reason instanceof TaskFailedReason) {
                 TaskFailedReason taskFailedReason = (TaskFailedReason) reason;
@@ -65,22 +66,24 @@ public class CustomSparkMetricsListener extends SparkListener {
                         }
                     });
 */
-                    String errorMessage = exception.isEmpty() ?
-                            "UNKNOWN" :
+                    String errorMessage = exception.isEmpty()
+                            ?
+                            "UNKNOWN"
+                            :
                             exception.get().getCause() == null ? exception.get().getMessage() : exception.get().getCause().getMessage();
-                    customMetricCounterConsumer.onMetric("TaskStatus_ExceptionFailure." + appendTags(taskEnd), 1);
-                    customMetricCounterConsumer.onMetric("TaskStatus_ExceptionFailureMsg." + substr(errorMessage), 1);
+                    metricsConsumer.onMetric("TaskStatus_ExceptionFailure." + appendTags(taskEnd), 1);
+                    metricsConsumer.onMetric("TaskStatus_ExceptionFailureMsg." + substr(errorMessage), 1);
 
                 } else {
-                    customMetricCounterConsumer.onMetric("TaskStatus_TaskFailedReason." + appendTags(taskEnd), 1);
-                    customMetricCounterConsumer.onMetric("TaskStatus_TaskFailedReasonMsg." + substr(taskFailedReason.toErrorString()), 1);
+                    metricsConsumer.onMetric("TaskStatus_TaskFailedReason." + appendTags(taskEnd), 1);
+                    metricsConsumer.onMetric("TaskStatus_TaskFailedReasonMsg." + substr(taskFailedReason.toErrorString()), 1);
                 }
             }
-            customMetricCounterConsumer.onMetric("Task_output_bytesWritten." + appendTags(taskEnd), taskEnd.taskMetrics().outputMetrics().bytesWritten());
-            customMetricCounterConsumer.onMetric("Task_output_recordsWritten." + appendTags(taskEnd), taskEnd.taskMetrics().outputMetrics().recordsWritten());
+            metricsConsumer.onMetric("Task_output_bytesWritten." + appendTags(taskEnd), taskEnd.taskMetrics().outputMetrics().bytesWritten());
+            metricsConsumer.onMetric("Task_output_recordsWritten." + appendTags(taskEnd), taskEnd.taskMetrics().outputMetrics().recordsWritten());
 
-            customMetricCounterConsumer.onMetric("Task_input_recordsRead." + appendTags(taskEnd), taskEnd.taskMetrics().inputMetrics().recordsRead());
-            customMetricCounterConsumer.onMetric("Task_input_bytesRead." + appendTags(taskEnd), taskEnd.taskMetrics().inputMetrics().bytesRead());
+            metricsConsumer.onMetric("Task_input_recordsRead." + appendTags(taskEnd), taskEnd.taskMetrics().inputMetrics().recordsRead());
+            metricsConsumer.onMetric("Task_input_bytesRead." + appendTags(taskEnd), taskEnd.taskMetrics().inputMetrics().bytesRead());
         }
     }
 
@@ -101,7 +104,7 @@ public class CustomSparkMetricsListener extends SparkListener {
         if (string == null) {
             return "";
         } else {
-            return string.substring(0, Math.min(string.length(), 30)).replaceAll("\\.", "_");
+            return string.substring(0, Math.min(string.length(), KEY_MAX_LENGTH)).replaceAll("\\.", "_");
         }
     }
 }
