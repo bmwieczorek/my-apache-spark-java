@@ -1,6 +1,5 @@
-package com.bawi.spark;
+package com.bawi.spark.common;
 
-import com.bawi.spark.common.SparkIngestionBase;
 import org.apache.spark.sql.SparkSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface LoggingInfoListenerRegistrar extends SparkIngestionBase {
+public interface LoggingInfoListenerRegistrar extends SparkContextListenerRegistrar {
     Logger LOGGER = LoggerFactory.getLogger(LoggingInfoListenerRegistrar.class);
 
     @Override

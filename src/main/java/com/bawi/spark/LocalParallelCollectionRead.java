@@ -1,7 +1,7 @@
 package com.bawi.spark;
 
 import com.bawi.spark.common.ConfigurationProvider;
-import com.bawi.spark.common.SparkIngestionBase;
+import com.bawi.spark.common.DataFrameRead;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collections;
 
-public interface Read extends SparkIngestionBase, ConfigurationProvider {
-     Logger LOGGER = LoggerFactory.getLogger(Read.class);
+public interface LocalParallelCollectionRead extends DataFrameRead, ConfigurationProvider {
+     Logger LOGGER = LoggerFactory.getLogger(LocalParallelCollectionRead.class);
 
     default @Override
     Dataset<Row> read(SparkSession sparkSession) {

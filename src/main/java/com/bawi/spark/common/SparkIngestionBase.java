@@ -12,27 +12,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface SparkIngestionBase extends SparkBase {
+public abstract class SparkIngestionBase implements DataFrameRead, DataFrameWrite, SparkContextListenerRegistrar {
     Logger LOGGER = LoggerFactory.getLogger(SparkIngestionBase.class);
 
-    default List<Consumer<SparkSession>> getOnStartListeners() {
-        return new ArrayList<>();
+    private SparkSession sparkSession;
+
+    public SparkIngestionBase(SparkSession sparkSession) {
+        this.sparkSession = sparkSession;
     }
 
-    default List<Consumer<SparkSession>> getOnSuccessListeners() {
-        return new ArrayList<>();
-    }
-
-    default List<Consumer<SparkSession>> getOnErrorListeners() {
-        return new ArrayList<>();
-    }
-
-    Dataset<Row> read(SparkSession sparkSession);
-
-    void write(Dataset<Row> ds);
-
-    @Override
-    default void runSpark(SparkSession sparkSession) {
+    public void start() {
         long startTimeMillis = System.currentTimeMillis();
         LongAccumulator recordsCountAcc = sparkSession.sparkContext().longAccumulator("recordsCountAcc");
         try {
