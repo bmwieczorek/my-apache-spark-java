@@ -1,13 +1,13 @@
-package com.bawi.spark;
+package com.bawi.spark.common;
 
-import com.bawi.spark.common.Configuration;
-import com.bawi.spark.common.ConfigurationProvider;
-import com.bawi.spark.common.LoggingInfoListenerRegistrar;
-import com.bawi.spark.common.SparkIngestionBase;
+import com.bawi.spark.ConsoleOutputWrite;
+import com.bawi.spark.LocalParallelCollectionRead;
 import org.apache.spark.sql.SparkSession;
+import org.junit.Test;
 
-public class SparkAppTest {
-    static class SparkApp extends SparkIngestionBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
+public class SparkIngestionTest {
+
+    private static class SparkApp extends SparkIngestionBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
             LoggingInfoListenerRegistrar, ConfigurationProvider {
 
         public SparkApp(SparkSession sparkSession) {
@@ -20,9 +20,10 @@ public class SparkAppTest {
         }
     }
 
-    public static void main(String[] args) {
+    @Test
+    public void start() {
         SparkSession sparkSession = SparkSession.builder()
-                .appName(SparkAppTest.class.getSimpleName())
+                .appName(SparkIngestionTest.class.getSimpleName())
                 .master("local[*]")
                 .getOrCreate();
         new SparkApp(sparkSession).start();
