@@ -1,5 +1,6 @@
 package com.bawi.spark;
 
+
 import com.bawi.spark.common.*;
 import org.apache.spark.sql.SparkSession;
 
@@ -14,7 +15,7 @@ public class SparkApp implements SparkBase, CustomSparkMetricsRegistrar {
         class SparkIngestion extends SparkIngestionBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
                 LoggingInfoListenerRegistrar, ConfigurationProvider {
 
-            public SparkIngestion(SparkSession sparkSession) {
+            SparkIngestion(SparkSession sparkSession) {
                 super(sparkSession);
             }
 

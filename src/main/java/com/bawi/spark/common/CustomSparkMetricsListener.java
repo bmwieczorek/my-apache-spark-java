@@ -21,7 +21,7 @@ import java.util.Optional;
 public class CustomSparkMetricsListener extends SparkListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomSparkMetricsListener.class);
-    public static final int KEY_MAX_LENGTH = 30;
+    private static final int KEY_MAX_LENGTH = 30;
 
     private long appStartTimeMillis = Instant.now().toEpochMilli();
 

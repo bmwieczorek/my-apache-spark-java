@@ -1,8 +1,6 @@
 package com.bawi.spark.common;
 
 import org.apache.spark.sql.SparkSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public interface SparkBase extends SparkMetricsRegistrar {
 

@@ -8,12 +8,8 @@ import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
 public abstract class SparkIngestionBase implements DataFrameRead, DataFrameWrite, SparkContextListenerRegistrar {
-    Logger LOGGER = LoggerFactory.getLogger(SparkIngestionBase.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SparkIngestionBase.class);
 
     private SparkSession sparkSession;
 
