@@ -18,12 +18,9 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public interface LocalParallelCollectionRead extends DataFrameRead, ConfigurationProvider {
-     Logger LOGGER = LoggerFactory.getLogger(LocalParallelCollectionRead.class);
 
     default @Override
     Dataset<Row> read(SparkSession sparkSession) {
-        String readPath = getConfiguration().getString("read.path");
-        LOGGER.info("Reading dataset from {}", readPath);
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkSession.sparkContext());
         JavaRDD<String> javaRDDString = javaSparkContext.parallelize(Arrays.asList("bob", "alice"));
 //        Dataset<Row> ds = sparkSession.read().json(javaRDD);
