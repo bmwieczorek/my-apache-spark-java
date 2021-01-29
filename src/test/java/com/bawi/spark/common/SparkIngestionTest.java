@@ -1,7 +1,6 @@
 package com.bawi.spark.common;
 
-import com.bawi.spark.CustomSparkMetricsRegistrar;
-import com.bawi.spark.LocalParallelCollectionRead;
+import com.bawi.spark.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -28,43 +27,62 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class SparkIngestionTest {
-    private interface JsonOutputCollect extends DataFrameWrite, ConfigurationProvider {
+
+    private interface JsonOutputLoggerWrite extends DataFrameWrite, ConfigurationProvider {
+        Logger LOGGER = LoggerFactory.getLogger(JsonOutputLoggerWrite.class);
         List<String> schemaAndJson = new ArrayList<>();
 
         @Override
         default void write(Dataset<Row> ds) {
-            schemaAndJson.add(ds.schema().json());
+            String schema = ds.schema().json();
+            schemaAndJson.add(schema);
+            LOGGER.info("schema: {}", schema);
             List<String> elements = ds.toJSON().toJavaRDD().collect();
             String json = elements.stream().collect(Collectors.joining(",", "[", "]"));
             schemaAndJson.add(json);
-        }
-    }
-
-    private interface HiveRead extends DataFrameRead, ConfigurationProvider {
-        Logger LOGGER = LoggerFactory.getLogger(JsonDiscWrite.class);
-
-        @Override
-        default Dataset<Row> read(SparkSession sparkSession) {
-            String sqlQuery = getConfiguration().getString("sql.query");
-            LOGGER.info("sql.query: {}", sqlQuery);
-            return sparkSession.sql(sqlQuery);
-        }
-    }
-
-    private interface JsonDiscWrite extends DataFrameWrite, ConfigurationProvider {
-        Logger LOGGER = LoggerFactory.getLogger(JsonDiscWrite.class);
-
-        @Override
-        default void write(Dataset<Row> ds) {
-            String writePath = getConfiguration().getString("write.path");
-            LOGGER.info("writePath: {}", writePath);
-            ds.write().json(writePath);
+            LOGGER.info("json: {}", json);
         }
     }
 
     @Test
-    public void shouldReadHiveAndWriteJson() throws JSONException, IOException {
-        class SparkApp extends SparkBase implements HiveRead, JsonDiscWrite,
+    public void shouldTransformLocalParallelCollectionToOutputJson() throws JSONException {
+        class SparkApp extends SparkReadWriteBase implements LocalParallelCollectionRead, JsonOutputLoggerWrite, ConfigurationProvider {
+
+            public SparkApp(SparkSession sparkSession) {
+                super(sparkSession);
+            }
+
+            @Override
+            public Configuration getConfiguration() {
+                return new Configuration(new Properties());
+            }
+        }
+
+        // before
+        SparkSession sparkSession = SparkSession.builder()
+                .appName(SparkIngestionTest.class.getSimpleName())
+                .master("local[*]")
+                .getOrCreate();
+
+        // given
+        SparkApp sparkApp = new SparkApp(sparkSession);
+
+        // when
+        sparkApp.run();
+
+        // then
+        String expectedSchema = getFileContent("expected/expected-schema.json");
+        JSONAssert.assertEquals(expectedSchema, sparkApp.schemaAndJson.get(0), JSONCompareMode.STRICT_ORDER);
+        String expectedJson = getFileContent("expected/expected-json.json");
+        JSONAssert.assertEquals(expectedJson, sparkApp.schemaAndJson.get(1), JSONCompareMode.STRICT_ORDER);
+
+        // after
+        sparkSession.stop();
+    }
+
+    @Test
+    public void shouldReadHiveAndWriteJsonToDisc() throws JSONException, IOException {
+        class SparkApp extends SparkReadWriteBase implements HiveRead, JsonDiscWrite,
                 LoggingInfoListenerRegistrar, CustomSparkMetricsRegistrar, ConfigurationProvider {
 
             public SparkApp(SparkSession sparkSession) {
@@ -104,7 +122,7 @@ public class SparkIngestionTest {
         SparkApp sparkApp = new SparkApp(sparkSession);
 
         // when
-        sparkApp.start();
+        sparkApp.run();
 
         Dataset<Row> dsRow = sparkSession.read().json(testDir + "/output");
         List<String> collect = dsRow.toJSON().toJavaRDD().collect();
@@ -115,43 +133,6 @@ public class SparkIngestionTest {
         // after
         sparkSession.sql("DROP TABLE mydb.mytable");
         sparkSession.sql("DROP DATABASE mydb");
-        sparkSession.stop();
-    }
-
-    @Test
-    public void shouldTransformParallelCollectionToOutputJson() throws JSONException {
-        class SparkApp extends SparkBase implements LocalParallelCollectionRead, JsonOutputCollect, ConfigurationProvider {
-
-            public SparkApp(SparkSession sparkSession) {
-                super(sparkSession);
-            }
-
-            @Override
-            public Configuration getConfiguration() {
-                return new Configuration(new Properties());
-            }
-        }
-
-        // before
-        SparkSession sparkSession = SparkSession.builder()
-                .appName(SparkIngestionTest.class.getSimpleName())
-                .master("local[*]")
-                .getOrCreate();
-
-        // given
-
-        SparkApp sparkApp = new SparkApp(sparkSession);
-
-        // when
-        sparkApp.start();
-
-        // then
-        String expectedSchema = getFileContent("expected/expected-schema.json");
-        JSONAssert.assertEquals(expectedSchema, sparkApp.schemaAndJson.get(0), JSONCompareMode.STRICT_ORDER);
-        String expectedJson = getFileContent("expected/expected-json.json");
-        JSONAssert.assertEquals(expectedJson, sparkApp.schemaAndJson.get(1), JSONCompareMode.STRICT_ORDER);
-
-        // after
         sparkSession.stop();
     }
 

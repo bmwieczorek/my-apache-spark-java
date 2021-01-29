@@ -1,7 +1,5 @@
-package com.bawi.spark;
+package com.bawi.spark.common;
 
-import com.bawi.spark.common.CustomSparkMetricsListener;
-import com.bawi.spark.common.SparkMetricsRegistrar;
 import org.apache.spark.SparkContext;
 import org.apache.spark.groupon.metrics.UserMetricsSystem;
 import org.apache.spark.sql.SparkSession;

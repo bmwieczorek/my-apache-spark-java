@@ -7,12 +7,13 @@ import org.apache.spark.sql.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public interface ConsoleOutputWrite extends DataFrameWrite, ConfigurationProvider {
-    Logger LOGGER = LoggerFactory.getLogger(ConsoleOutputWrite.class);
+public interface JsonDiscWrite extends DataFrameWrite, ConfigurationProvider {
+    Logger LOGGER = LoggerFactory.getLogger(JsonDiscWrite.class);
 
     @Override
     default void write(Dataset<Row> ds) {
-        ds.printSchema();
-        ds.show();
+        String writePath = getConfiguration().getString("write.path");
+        LOGGER.info("writing json to: {}", writePath);
+        ds.write().json(writePath);
     }
 }

@@ -1,12 +1,9 @@
 package com.bawi.spark;
 
 
-import com.bawi.spark.common.Configuration;
-import com.bawi.spark.common.ConfigurationProvider;
-import com.bawi.spark.common.LoggingInfoListenerRegistrar;
-import com.bawi.spark.common.SparkBase;
+import com.bawi.spark.common.*;
 
-public class SparkApp extends SparkBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
+public class SparkApp extends SparkReadWriteBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
         LoggingInfoListenerRegistrar, CustomSparkMetricsRegistrar, ConfigurationProvider {
 
     @Override
@@ -15,6 +12,6 @@ public class SparkApp extends SparkBase implements LocalParallelCollectionRead, 
     }
 
     public static void main(String[] args) {
-        new SparkApp().start();
+        new SparkApp().run();
     }
 }
