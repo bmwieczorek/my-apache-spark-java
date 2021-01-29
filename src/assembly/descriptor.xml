@@ -16,21 +16,17 @@
             <outputDirectory>bin</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>bin</directory>
+            <directory>bin/${env}</directory>
             <includes>
-                <include>*.conf</include>
                 <include>*.properties</include>
             </includes>
-            <filtered>true</filtered>
             <outputDirectory>bin</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>bin/${env}</directory>
+            <directory>bin</directory>
             <includes>
-                <include>*.conf</include>
                 <include>*.properties</include>
             </includes>
-            <filtered>true</filtered>
             <outputDirectory>bin</outputDirectory>
         </fileSet>
     </fileSets>
