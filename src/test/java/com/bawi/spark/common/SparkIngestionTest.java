@@ -1,15 +1,14 @@
 package com.bawi.spark.common;
 
+import com.bawi.spark.CustomSparkMetricsRegistrar;
 import com.bawi.spark.LocalParallelCollectionRead;
 import org.apache.commons.io.FileUtils;
-import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.json.JSONException;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -24,11 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class SparkIngestionTest {
     private interface JsonOutputCollect extends DataFrameWrite, ConfigurationProvider {
@@ -67,8 +64,8 @@ public class SparkIngestionTest {
 
     @Test
     public void shouldReadHiveAndWriteJson() throws JSONException, IOException {
-        class SparkApp extends SparkIngestionBase implements HiveRead, JsonDiscWrite,
-                LoggingInfoListenerRegistrar, ConfigurationProvider {
+        class SparkApp extends SparkBase implements HiveRead, JsonDiscWrite,
+                LoggingInfoListenerRegistrar, CustomSparkMetricsRegistrar, ConfigurationProvider {
 
             public SparkApp(SparkSession sparkSession) {
                 super(sparkSession);
@@ -123,8 +120,7 @@ public class SparkIngestionTest {
 
     @Test
     public void shouldTransformParallelCollectionToOutputJson() throws JSONException {
-        class SparkApp extends SparkIngestionBase implements LocalParallelCollectionRead, JsonOutputCollect,
-                LoggingInfoListenerRegistrar, ConfigurationProvider {
+        class SparkApp extends SparkBase implements LocalParallelCollectionRead, JsonOutputCollect, ConfigurationProvider {
 
             public SparkApp(SparkSession sparkSession) {
                 super(sparkSession);

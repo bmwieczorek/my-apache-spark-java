@@ -1,29 +1,20 @@
 package com.bawi.spark;
 
 
-import com.bawi.spark.common.*;
-import org.apache.spark.sql.SparkSession;
+import com.bawi.spark.common.Configuration;
+import com.bawi.spark.common.ConfigurationProvider;
+import com.bawi.spark.common.LoggingInfoListenerRegistrar;
+import com.bawi.spark.common.SparkBase;
 
-public class SparkApp implements SparkBase, CustomSparkMetricsRegistrar {
+public class SparkApp extends SparkBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
+        LoggingInfoListenerRegistrar, CustomSparkMetricsRegistrar, ConfigurationProvider {
+
+    @Override
+    public Configuration getConfiguration() {
+        return new Configuration("app.properties");
+    }
 
     public static void main(String[] args) {
         new SparkApp().start();
-    }
-
-    @Override
-    public void runSpark(SparkSession sparkSession) {
-        class SparkIngestion extends SparkIngestionBase implements LocalParallelCollectionRead, ConsoleOutputWrite,
-                LoggingInfoListenerRegistrar, ConfigurationProvider {
-
-            SparkIngestion(SparkSession sparkSession) {
-                super(sparkSession);
-            }
-
-            @Override
-            public Configuration getConfiguration() {
-                return new Configuration("app.properties");
-            }
-        }
-        new SparkIngestion(sparkSession).start();
     }
 }
