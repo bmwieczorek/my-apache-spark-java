@@ -10,8 +10,9 @@ KRB_DOMAIN=$(grep -i default_realm /etc/krb5.conf | grep = | grep -Eo "[A-Za-z0-
 KRB_KEYTAB=$USER.keytab
 KRB_PRINCIPAL=$USER@$KRB_DOMAIN
 
+#kinit
+#KRB_MASTER_KDC_HOSTNAME=$(grep -i master_kdc /etc/krb5.conf | grep = | grep -Eo "[A-Za-z0-9_]+" | grep -vi master_kdc | head -n 1)
 #KRB_MASTER_KDC_DOMAIN=$(grep -i domain /etc/krb5.conf | grep = | grep -Eo "[A-Za-z0-9_\.]+" | grep -vi domain | head -n 1)
-#KRB_MASTER_KDC_HOSTNAME=$(grep -i master_kdc cat /etc/krb5.conf | grep = | grep -Eo "[A-Za-z0-9_]+" | grep -vi master_kdc | head -n 1)
 #ipa-getkeytab -s $KRB_MASTER_KDC_HOSTNAME.$KRB_MASTER_KDC_DOMAIN -p $KRB_PRINCIPAL -P -k $HOME/security/$KRB_KEYTAB
 kinit -kt $HOME/security/$KRB_KEYTAB $KRB_PRINCIPAL
 
