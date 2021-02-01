@@ -1,13 +1,19 @@
 package com.bawi.spark.common;
 
-import com.bawi.spark.*;
+import com.bawi.spark.HiveRead;
+import com.bawi.spark.JsonDiscWrite;
+import com.bawi.spark.LocalParallelCollectionRead;
 import org.apache.commons.io.FileUtils;
+import org.apache.spark.SparkException;
+import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.json.JSONException;
+import org.junit.Before;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -44,6 +50,13 @@ public class SparkIngestionTest {
         }
     }
 
+    private static final String TEST_DIR = "target/" + SparkIngestionTest.class.getSimpleName();
+
+    @Before
+    public void before() throws IOException {
+        deleteIfExists(TEST_DIR);
+    }
+
     @Test
     public void shouldTransformLocalParallelCollectionToOutputJson() throws JSONException {
         class SparkApp extends SparkReadWriteBase implements LocalParallelCollectionRead, JsonOutputLoggerWrite, ConfigurationProvider {
@@ -61,6 +74,7 @@ public class SparkIngestionTest {
         // before
         SparkSession sparkSession = SparkSession.builder()
                 .appName(SparkIngestionTest.class.getSimpleName())
+                .enableHiveSupport()
                 .master("local[*]")
                 .getOrCreate();
 
@@ -72,16 +86,16 @@ public class SparkIngestionTest {
 
         // then
         String expectedSchema = getFileContent("expected/expected-schema.json");
-        JSONAssert.assertEquals(expectedSchema, sparkApp.schemaAndJson.get(0), JSONCompareMode.STRICT_ORDER);
+        JSONAssert.assertEquals(expectedSchema, JsonOutputLoggerWrite.schemaAndJson.get(0), JSONCompareMode.STRICT_ORDER);
         String expectedJson = getFileContent("expected/expected-json.json");
-        JSONAssert.assertEquals(expectedJson, sparkApp.schemaAndJson.get(1), JSONCompareMode.STRICT_ORDER);
+        JSONAssert.assertEquals(expectedJson, JsonOutputLoggerWrite.schemaAndJson.get(1), JSONCompareMode.STRICT_ORDER);
 
         // after
         sparkSession.stop();
     }
 
     @Test
-    public void shouldReadHiveAndWriteJsonToDisc() throws JSONException, IOException {
+    public void shouldReadHiveAndWriteJsonToDisc() throws JSONException {
         class SparkApp extends SparkReadWriteBase implements HiveRead, JsonDiscWrite,
                 LoggingInfoListenerRegistrar, CustomSparkMetricsRegistrar, ConfigurationProvider {
 
@@ -95,21 +109,18 @@ public class SparkIngestionTest {
             }
         }
 
-        String testDir = "target/" + getClass().getSimpleName();
-        deleteIfExists(testDir);
-
         SparkSession sparkSession = SparkSession.builder()
                 .appName(SparkIngestionTest.class.getSimpleName())
-                .config("spark.sql.warehouse.dir", new File(testDir + "/warehouse").getAbsolutePath())
+                .config("spark.sql.warehouse.dir", new File(TEST_DIR + "/warehouse").getAbsolutePath())
                 .master("local[*]")
                 .enableHiveSupport()
                 .getOrCreate();
 
-        System.setProperty("derby.system.home", new File(testDir + "/metastore_db").getAbsolutePath());
-        System.setProperty("derby.stream.error.file", new File(testDir + "/derby.log").getAbsolutePath());
+        System.setProperty("derby.system.home", new File(TEST_DIR + "/metastore_db").getAbsolutePath());
+        System.setProperty("derby.stream.error.file", new File(TEST_DIR + "/derby.log").getAbsolutePath());
 
         sparkSession.sqlContext().sql("CREATE DATABASE mydb");
-        StructType schema = (StructType)DataType.fromJson(getFileContent("hive/schema.json"));
+        StructType schema = (StructType) DataType.fromJson(getFileContent("hive/schema.json"));
         Path jsonDirPath = getPath("hive/data");
 
         String absolutePath = jsonDirPath.toAbsolutePath().toString();
@@ -124,16 +135,43 @@ public class SparkIngestionTest {
         // when
         sparkApp.run();
 
-        Dataset<Row> dsRow = sparkSession.read().json(testDir + "/output");
+        Dataset<Row> dsRow = sparkSession.read().json(TEST_DIR + "/output");
         List<String> collect = dsRow.toJSON().toJavaRDD().collect();
         String json = collect.stream().collect(Collectors.joining(",", "[", "]"));
         String expectedJson = getFileContent("expected/expected-json.json");
         JSONAssert.assertEquals(expectedJson, json, JSONCompareMode.STRICT_ORDER);
-        
+
         // after
         sparkSession.sql("DROP TABLE mydb.mytable");
         sparkSession.sql("DROP DATABASE mydb");
         sparkSession.stop();
+    }
+
+    @Test(expected = SparkException.class)
+    public void shouldFail() {
+        class SparkApp extends SparkBase {
+            SparkApp(SparkSession sparkSession) {
+                super(sparkSession);
+            }
+
+            @Override
+            protected void doInRun(SparkSession sparkSession) {
+                // requires spark-avro_2.11 dependency
+                Dataset<Row> dsRow = sparkSession.read().format("avro")
+                        .load("src/test/resources/avro/numbers-1-2-a-4.avro");
+                Dataset<String> dsString = dsRow.as(Encoders.STRING());
+                MapFunction<String, Integer> func = Integer::parseInt; // extract type to avoid ambiguous method call (other scala not @Functional interface)
+                Dataset<Integer> dsInt = dsString.map(func, Encoders.INT());
+                dsInt.write().format("avro").save(TEST_DIR + "/avro");
+            }
+        }
+        SparkSession sparkSession = SparkSession.builder()
+                .appName(SparkIngestionTest.class.getSimpleName())
+                .master("local[1]")
+                .getOrCreate();
+
+        new SparkApp(sparkSession).run();
+
     }
 
     private static String getFileContent(String relativeFilePath) {

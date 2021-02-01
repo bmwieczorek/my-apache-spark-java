@@ -17,7 +17,7 @@ public abstract class SparkBase implements SparkContextListenerRegistrar, SparkM
         this.sparkSession = sparkSession;
     }
 
-    public abstract void doInRun(SparkSession sparkSession);
+    protected abstract void doInRun(SparkSession sparkSession);
 
     public void run() {
         long startTimeMillis = System.currentTimeMillis();
