@@ -16,6 +16,8 @@ import scala.Option;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class CustomSparkMetricsListener extends SparkListener {
@@ -26,9 +28,11 @@ public class CustomSparkMetricsListener extends SparkListener {
     private long appStartTimeMillis = Instant.now().toEpochMilli();
 
     private final CustomMetricCounterConsumer metricsConsumer;
+    private final Map<String, CustomMapAccumulator> customMapAccumulatorMap;
 
-    public CustomSparkMetricsListener(CustomMetricCounterConsumer metricsConsumer) {
+    public CustomSparkMetricsListener(CustomMetricCounterConsumer metricsConsumer, Map<String, CustomMapAccumulator> customMapAccumulatorMap) {
         this.metricsConsumer = metricsConsumer;
+        this.customMapAccumulatorMap = customMapAccumulatorMap;
     }
 
     @Override
@@ -36,6 +40,12 @@ public class CustomSparkMetricsListener extends SparkListener {
         Long appEndTimeMillis = Optional.ofNullable(applicationEnd).map(SparkListenerApplicationEnd::time).orElse(0L);
         long durationMillis = appEndTimeMillis - appStartTimeMillis;
         UserMetricsSystem.gauge("applicationElapsedTimeInSecs." + resolveHostName()).set(durationMillis);
+        customMapAccumulatorMap.forEach((name, customAccumulator) -> {
+            HashMap<String, Long> map = customAccumulator.value();
+            map.forEach((metricsName, metricsValue) -> {
+                metricsConsumer.onMetric(metricsName + "." + resolveHostName(), metricsValue);
+            });
+        });
         LOGGER.info("{} applicationElapsedTimeInSecs: {}", resolveHostName(), durationMillis);
     }
 

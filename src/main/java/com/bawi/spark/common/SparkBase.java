@@ -4,8 +4,12 @@ import org.apache.spark.sql.SparkSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class SparkBase implements SparkContextListenerRegistrar, SparkMetricsRegistrar {
     private static final Logger LOGGER = LoggerFactory.getLogger(SparkBase.class);
+    protected Map<String, CustomMapAccumulator> customMapAccumulatorMap = new HashMap<>();
 
     private SparkSession sparkSession;
 
@@ -22,7 +26,7 @@ public abstract class SparkBase implements SparkContextListenerRegistrar, SparkM
     public void run() {
         long startTimeMillis = System.currentTimeMillis();
         try {
-            setupMetrics(sparkSession);
+            setupMetrics(sparkSession, customMapAccumulatorMap);
 
             getOnStartListeners().forEach(l -> l.accept(sparkSession));
 

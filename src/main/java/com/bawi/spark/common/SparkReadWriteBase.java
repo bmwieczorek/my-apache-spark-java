@@ -4,7 +4,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +20,9 @@ public abstract class SparkReadWriteBase extends SparkBase implements DataFrameR
 
     @Override
     public void doInRun(SparkSession sparkSession) {
-        LongAccumulator recordsCountAcc = sparkSession.sparkContext().longAccumulator("recordsCountAcc");
+        CustomMapAccumulator customMapAccumulator = new CustomMapAccumulator();
+        customMapAccumulatorMap.put("customMapAccumulator", customMapAccumulator);
+        sparkSession.sparkContext().register(customMapAccumulator, "customMapAccumulator");
 
         Dataset<Row> ds = read(sparkSession);
 
@@ -37,7 +38,7 @@ public abstract class SparkReadWriteBase extends SparkBase implements DataFrameR
 
         // using java toJavaRDD
         JavaRDD<Row> rowRDD = ds.toJavaRDD().map(row -> {
-            recordsCountAcc.add(1L);
+            customMapAccumulator.add("recordsCount");
             return row;
         });
 
@@ -45,7 +46,7 @@ public abstract class SparkReadWriteBase extends SparkBase implements DataFrameR
 
         write(dataset);
 
-        LOGGER.info("Spark processed {} record(s)", recordsCountAcc.value());
+        LOGGER.info("Spark accumulators: {}", customMapAccumulator.value());
     }
 
 }

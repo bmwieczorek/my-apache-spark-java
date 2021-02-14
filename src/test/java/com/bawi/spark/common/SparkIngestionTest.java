@@ -33,7 +33,6 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class SparkIngestionTest {
-
     private interface JsonOutputLoggerWrite extends DataFrameWrite, ConfigurationProvider {
         Logger LOGGER = LoggerFactory.getLogger(JsonOutputLoggerWrite.class);
         List<String> schemaAndJson = new ArrayList<>();

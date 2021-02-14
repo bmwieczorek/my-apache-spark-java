@@ -5,16 +5,15 @@ import com.bawi.spark.common.DataFrameRead;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-import org.apache.spark.sql.*;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 import scala.reflect.ClassTag$;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public interface LocalParallelCollectionRead extends DataFrameRead, ConfigurationProvider {
@@ -34,7 +33,7 @@ public interface LocalParallelCollectionRead extends DataFrameRead, Configuratio
         // c) pure java way using javaRDD wrapper to call parallelize
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkSession.sparkContext());
         JavaRDD<String> javaRDDString = javaSparkContext.parallelize(strings);
-        RDD<String> rdd = javaRDDString.rdd();
+        // RDD<String> rdd = javaRDDString.rdd();
 
         // 2. Create Dataset/Dataframe of Row
         // a) scala way:
@@ -60,8 +59,8 @@ public interface LocalParallelCollectionRead extends DataFrameRead, Configuratio
         stringDataset.printSchema();
         stringDataset.show();
 */
-
         // c) use java
+/*
         // Row is a generic container of data objects of different type
         JavaRDD<Row> javaRDDRow = javaRDDString.map(RowFactory::create);
         //  using struct
@@ -71,15 +70,17 @@ public interface LocalParallelCollectionRead extends DataFrameRead, Configuratio
         Dataset<Row> dataset3 = sparkSession.createDataFrame(javaRDDRow, structType);
         dataset3.printSchema();
         dataset3.show();
+*/
 
+        // d) use spark api + encoders
         Dataset<String> dataset4 = sparkSession.createDataset(strings, Encoders.STRING());
         dataset4.printSchema();
         dataset4.show();
 
-        Dataset<Row> dataset5 = dataset4.toDF("javaString");
+        Dataset<Row> dataset5 = dataset4.toDF("name");
         dataset5.printSchema();
         dataset5.show();
 
-        return dataset3;
+        return dataset5;
     }
 }
