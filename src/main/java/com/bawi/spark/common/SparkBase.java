@@ -9,6 +9,7 @@ import java.util.Map;
 
 public abstract class SparkBase implements SparkContextListenerRegistrar, SparkMetricsRegistrar {
     private static final Logger LOGGER = LoggerFactory.getLogger(SparkBase.class);
+    public static final String CUSTOM_MAP_ACCUMULATOR_NAME = "customMapAccumulator";
     protected Map<String, CustomMapAccumulator> customMapAccumulatorMap = new HashMap<>();
 
     private SparkSession sparkSession;
@@ -25,6 +26,8 @@ public abstract class SparkBase implements SparkContextListenerRegistrar, SparkM
 
     public void run() {
         long startTimeMillis = System.currentTimeMillis();
+        CustomMapAccumulator customMapAccumulator = getCustomMapAccumulator();
+        sparkSession.sparkContext().register(customMapAccumulator, CUSTOM_MAP_ACCUMULATOR_NAME);
         try {
             setupMetrics(sparkSession, customMapAccumulatorMap);
 
@@ -34,11 +37,24 @@ public abstract class SparkBase implements SparkContextListenerRegistrar, SparkM
 
             getOnSuccessListeners().forEach(l -> l.accept(sparkSession));
 
+            customMapAccumulator.add("ApplicationStatus.SUCCESS");
+
             LOGGER.info("Spark processing succeeded after {} ms", System.currentTimeMillis() - startTimeMillis);
         } catch (Exception e) {
             getOnErrorListeners().forEach(l -> l.accept(sparkSession));
+            customMapAccumulator.add("ApplicationStatus.FAILURE");
             LOGGER.error("Spark processing failed after " + (System.currentTimeMillis() - startTimeMillis) + " ms due to ", e);
             throw e;
+        }
+    }
+
+    public CustomMapAccumulator getCustomMapAccumulator() {
+        if (customMapAccumulatorMap.containsKey(CUSTOM_MAP_ACCUMULATOR_NAME)) {
+            return customMapAccumulatorMap.get(CUSTOM_MAP_ACCUMULATOR_NAME);
+        } else {
+            CustomMapAccumulator customMapAccumulator = new CustomMapAccumulator();
+            customMapAccumulatorMap.put(CUSTOM_MAP_ACCUMULATOR_NAME, customMapAccumulator);
+            return customMapAccumulator;
         }
     }
 }

@@ -16,10 +16,12 @@ public interface CustomSparkMetricsRegistrar extends SparkMetricsRegistrar {
         LOGGER.info("Setting up custom spark metrics");
         SparkContext sparkContext = sparkSession.sparkContext();
         UserMetricsSystem.initialize(sparkContext, "custom_metrics");
-        sparkContext.addSparkListener(new CustomSparkMetricsListener((key, value) -> {
+        CustomSparkMetricsListener listener = new CustomSparkMetricsListener((key, value) -> {
             LOGGER.info("Metric {} : {}", key, value);
             UserMetricsSystem.counter(key).inc(value);
-        }, customMapAccumulatorMap));
+        }, customMapAccumulatorMap);
+        listener.registerSparkListener(sparkContext);
+        listener.registerQueryExecutionListener(sparkSession);
     }
 
 }

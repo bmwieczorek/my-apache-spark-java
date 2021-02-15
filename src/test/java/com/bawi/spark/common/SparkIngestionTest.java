@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SparkIngestionTest {
@@ -58,6 +59,8 @@ public class SparkIngestionTest {
 
     @Test
     public void shouldTransformLocalParallelCollectionToOutputJson() throws JSONException {
+
+        // 2 record processed, 0 records read from disc, 0 records written to disc
         class SparkApp extends SparkReadWriteBase implements LocalParallelCollectionRead, JsonOutputLoggerWrite, ConfigurationProvider {
 
             public SparkApp(SparkSession sparkSession) {
@@ -148,7 +151,9 @@ public class SparkIngestionTest {
 
     @Test(expected = SparkException.class)
     public void shouldFail() {
-        class SparkApp extends SparkBase {
+        Pattern DIGITS_PATTEN = Pattern.compile("[0-9]+");
+
+        class SparkApp extends SparkBase implements CustomSparkMetricsRegistrar {
             SparkApp(SparkSession sparkSession) {
                 super(sparkSession);
             }
@@ -160,7 +165,9 @@ public class SparkIngestionTest {
                         .load("src/test/resources/avro/numbers-1-2-a-4.avro");
                 Dataset<String> dsString = dsRow.as(Encoders.STRING());
                 MapFunction<String, Integer> func = Integer::parseInt; // extract type to avoid ambiguous method call (other scala not @Functional interface)
-                Dataset<Integer> dsInt = dsString.map(func, Encoders.INT());
+                Dataset<Integer> dsInt = dsString
+                        //.filter((FilterFunction<String>) s -> DIGITS_PATTEN.matcher(s).matches())
+                        .map(func, Encoders.INT());
                 dsInt.write().format("avro").save(TEST_DIR + "/avro");
             }
         }

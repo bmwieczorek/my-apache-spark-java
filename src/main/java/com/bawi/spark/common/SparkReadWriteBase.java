@@ -20,9 +20,7 @@ public abstract class SparkReadWriteBase extends SparkBase implements DataFrameR
 
     @Override
     public void doInRun(SparkSession sparkSession) {
-        CustomMapAccumulator customMapAccumulator = new CustomMapAccumulator();
-        customMapAccumulatorMap.put("customMapAccumulator", customMapAccumulator);
-        sparkSession.sparkContext().register(customMapAccumulator, "customMapAccumulator");
+        CustomMapAccumulator customMapAccumulator = getCustomMapAccumulator();
 
         Dataset<Row> ds = read(sparkSession);
 
