@@ -24,17 +24,6 @@ public abstract class SparkReadWriteBase extends SparkBase implements DataFrameR
 
         Dataset<Row> ds = read(sparkSession);
 
-        // using scala RDD
-/*        RDD<Row> rowRDD = ds.rdd().map(new AbstractFunction1<Row, Row>() {
-            @Override
-            public Row apply(Row row) {
-                recordsCountAcc.add(1L);
-                return row;
-            }
-        }, ClassManifestFactory.fromClass(Row.class));
-*/
-
-        // using java toJavaRDD
         JavaRDD<Row> rowRDD = ds.toJavaRDD().map(row -> {
             customMapAccumulator.add("recordsCount");
             return row;
