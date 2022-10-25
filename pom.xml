@@ -8,7 +8,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spark.version>2.4.7</spark.version>
+        <spark.version>2.4.8</spark.version>
 <!--        <spark.version>2.3.0.cloudera4</spark.version>-->
 <!--        <parquet.version>1.8.3</parquet.version>-->
         <parquet.version>1.10.1</parquet.version>
@@ -72,6 +72,18 @@
             <artifactId>spark-core_2.11</artifactId>
             <version>${spark.version}</version>
             <scope>${spark.scope}</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.xbean</groupId>
+                    <artifactId>xbean-asm6-shaded</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.xbean</groupId>
+            <artifactId>xbean-asm6-shaded</artifactId>
+            <version>4.10</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
