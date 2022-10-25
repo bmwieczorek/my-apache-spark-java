@@ -90,6 +90,15 @@ public static class Person implements Serializable {
         Dataset<Row> dataset3 = sparkSession.createDataFrame(javaRDDRow, structType);
         dataset3.printSchema();
         dataset3.show();
+
+        Dataset<String> dataset4 = sparkSession.createDataset(strings, Encoders.STRING());
+        dataset4.printSchema();
+        dataset4.show();
+
+        Dataset<Row> dataset5 = dataset4.toDF("javaString");
+        dataset5.printSchema();
+        dataset5.show();
+        return dataset5;
 */
 
 
