@@ -13,8 +13,8 @@
 <!--        <parquet.version>1.8.3</parquet.version>-->
         <parquet.version>1.10.1</parquet.version>
         <spark.scope>compile</spark.scope>
-<!--        <scala.version>2.11</scala.version>-->
-        <scala.version>2.12</scala.version>
+        <scala.version>2.11</scala.version> <!-- groupon UserMetricsSystem works with scala 2.11 only -->
+<!--        <scala.version>2.12</scala.version>-->
     </properties>
 
     <build>
